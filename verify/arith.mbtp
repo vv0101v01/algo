@@ -1,0 +1,12 @@
+//
+// 邏輯端（logic side）：謂詞與引理 —— `moon prove` 的證明目標。
+// 形式：lemma where { proof_require, proof_ensure: <單一謂詞應用> } {}
+// （複合公式放在 predicate 定義內，lemma 只掛單一謂詞 —— 現行語法要求）
+// 注意：.mbt 合約與 lemma 均以內聯公式為主；此處的 predicate 用作文檔化定理陳述。
+//
+
+// 模 p 殘基的範圍性質：0 ≤ r < p。
+predicate in_range(r : Int, p : Int) {
+  (0 <= r) && (r < p)
+}
+

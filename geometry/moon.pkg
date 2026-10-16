@@ -1,0 +1,13 @@
+pkgtype(kind: "library")
+
+import {
+  "moon-algebra/num",
+  "moon-algebra/linalg",
+  "moon-algebra" @poly,
+  "moon-algebra/finite",
+}
+
+import {
+  "moon-algebra/testutil",
+  "moonbitlang/core/quickcheck",
+} for "wbtest"
