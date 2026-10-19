@@ -3,7 +3,10 @@
 以 **MoonBit**（moon 0.1.20261012）寫成的代數結構庫：由 `Ring`/`Field` 特質起步，
 沿 `num → linalg → root → finite → modules → geometry → scheme → verify` 依賴鏈
 構築 **投射模・循環模・層・凝聚層・剩餘理想・半單/單純/半素理想・坐標環・落特環・
-仿射代數簇・概形・局部環・冪等元・正則局部環** 等結構——全部計算留喺**編譯時/零成本抽象**，
+仿射代數簇・概形・局部環・冪等元・正則局部環** 等結構；再附 **規範形式**
+（Smith/Hermite/特徵多項式/有理標準形/ANF，`normal.mbt`）與 **範疇化擴展**
+（`cat/`：範疇・群胚・π₀・群胚基數・Grothendieck 群・有限 Yoneda）——
+全部計算留喺**編譯時/零成本抽象**，
 成個套件可以當作**依賴**俾你其他 project 用。
 
 ---
@@ -20,6 +23,7 @@
 #            "moon-algebra/geometry"  @geometry,# 仿射簇、坐標環、CRT
 #            "moon-algebra/scheme"    @scheme,  # Spec、Zariski 拓撲、結構層、黏合
 #            "moon-algebra/hott"      @hott,    # 同倫類型論：Equiv/transport/HIT/衍生定理
+#            "moon-algebra/cat"       @cat,     # 範疇化：Category/群胚/π₀/K(M)/有限Yoneda
 #            "moon-algebra/port"      @port,    # 移植流水線：簽名抽取→型別映射→骨架+報告
 #            "moon-algebra/verify"    ———       # 形式化證明（moon prove）
 ```
@@ -31,13 +35,13 @@
 
 | 類型 | 位置 | 數量 |
 |------|------|------|
-| 斷言測試 ✓ | 各 package `*_wbtest.mbt` / `*_test.mbt` | **98** |
-| 屬性測試 ✓ | `@quickcheck.check`（root 5・finite 4・modules 3・geometry 1・scheme 2・hott 4・port 3・num/linalg） | 含於 98 |
+| 斷言測試 ✓ | 各 package `*_wbtest.mbt` / `*_test.mbt` | **113** |
+| 屬性測試 ✓ | `@quickcheck.check`（root 12・finite 4・modules 3・geometry 1・scheme 2・hott 4・port 3・cat 5・num/linalg） | 含於 113 |
 | 形式化證明 ✓ | `verify/`（`options("proof-enabled": true)` + `.mbtp` 謂詞/引理） | **8 goals 全綠** |
 
 ```bash
 moon check          # 0 errors / 0 warnings
-moon test           # 98/98
+moon test           # 113/113
 ./prove.sh          # moon prove → "1 of 1 packages proved, 8 goals proved"
                     # 內部：MOON_PROVE_PRELUDE_OVERRIDE=prelude/ + --why3-config why3-user.conf
 ```
@@ -216,6 +220,48 @@ moon test           # 98/98
   `skeleton` 片段數 = `total`、測試函式/`assert` 行獨立搬運（`extract_test_names`、`count_asserts`）。
 - 設計邊界：**只做底層演算法與資料結構，不實作 CLI**——上層 AI/CLI 驅動骨架填充與重構。
 
+### 3.8 規範形式（`normal.mbt` — 五種標準形 + 衍生定理）
+
+- **Smith 規範形式（ℤ）**：`U·A·V = D = diag(d₁, …)`，`U,V` 幺模、`dᵢ ≥ 0`、`dᵢ | dᵢ₊₁`。
+  定理（存在唯一）：`d₁⋯d_k =` 全部 k 階子式之 gcd（不變量 → 對角唯一）；
+  `ℤⁿ / Aℤᵐ ≅ ⊕ᵢ ℤ/dᵢ`（有限生成 Abel 群基本定理）。
+  演算法：Euclidean 行/列約化 + 「主元整除整個子矩陣」掃描（餘數嚴降 ⇒ 有限步停）；
+  憑證：`U·A·V = D`、`det U = det V = ±1`（property test）。
+- **Hermite 規範形式（ℤ，行式）**：`H = T·A`，`det T = ±1`；行 echelon + 正主元 +
+  主元列上方元素 ∈ [0, d)。
+  定理（唯一）：該形為格 `L = rowspan_ℤ(A)` 的唯一代表；`HNF(HNF(A)) = HNF(A)`（冪等）。
+- **特徵多項式**：`χ_A(t) = det(tI − A)`（O(n³) 行列式 × n+1 插值點 Lagrange）。
+  定理：**Cayley–Hamilton** `χ_A(A) = 0`；`tr A = −a_{n−1}`、`det A = (−1)^n a_0`；
+  `A ∼ B ⇒ χ_A = χ_B`（相似不變）。
+- **有理標準形（Frobenius，𝔽_p）**：`tI − A` 在 `𝔽_p[t]` 上取 Smith → 首一不變因子
+  `s₁ | … | sₙ` → `RCF(A) = C(s₁) ⊕ … ⊕ C(sₙ)`（伴隨塊直和）。
+  定理：存在且唯一（至塊排序）；`χ_A = ∏ sᵢ`、`∑ deg sᵢ = n`、`tr(Aᵏ)` 相似不變；
+  `χ_{C(f)} = f`（伴隨矩陣定理）。
+- **ANF / Reed–Muller（GF(2)）**：`f = ⊕_{S⊆[n]} c_S · x^S`，Möbius 子集變換 O(n·2ⁿ)。
+  定理：**唯一性 + 反演對合** `μ² = id`；`ANF(f ⊕ g) = ANF(f) ⊕ ANF(g)`；
+  `deg parity = 1`、`deg maj₃ = 2`、`deg AND_n = n`。
+- ℤ 內部除法採截斷語義（`a/b`、裸 `%` 僅作整除判定）——與 `mod_pos` 同餘代表不同，
+  屬**刻意保留**（檔案頭聲明）；`verify/` 形式化目標獨立不動。
+
+### 3.9 範疇化擴展（`cat/` — 定義・定理・反降）
+
+- **定義（範疇/群胚）**：閉包字典 `Category[Obj, Hom]`（`id/∘/src/tgt/eq`，`compose(g,f)=g∘f` 圖式序）
+  ＋ `Groupoid`（`inv`）；律以 `assoc_ok / unit_ok / inv_ok` 可計算檢查（窮舉/抽樣驗證）。
+- **去圈定理**：`B(ℤ/n)` 一物體群胚（`Hom(*) = ℤ/n`，`∘ = (mod n)` 加法）——
+  `π₁(BG) ≅ G`（取 hom 回到原群，反降 unit）；`n=6` 窮舉 6³ 結合律 + 逆元律。
+- **自由範疇**：路徑範疇 `Path(G)`（合成 = 序列串接，結合律 = 列表結合律，結構相等）；
+  **長度函子** `len : Path(G) → (ℕ, +, 0)`；泛性存在側：邊權 `w : E → ℤ/n` 唯一延拓
+  加權函子 `W(p) = Σ_{e∈p} w(e) mod n`（同態律 `W(g∘f) = W(f)+W(g)`）。
+- **π₀ 定理**：`graph_components`（BFS，O(V+E)）⇔ `graph_reachable`（兩演算法交叉驗證）；
+  分割群胚 `π₀ =` 異構塊標籤 = 同構矩陣異同行數；`≅` 為等價關係（自反/對稱/傳遞）。
+- **群胚基數（反降）**：`|G| = Σ_{x∈代表} 1/|Aut(x)|`（`Frac` 通分約分）；
+  分割群胚上 `|C| · (1/|C|) = 1`/塊 ⇒ **`|G| = #π₀`**（集合層計數恢復）。
+- **Grothendieck 群（K-理論橋）**：`K(M) = (M×M)/~`，`(a,b) ~ (c,d) ⟺ a+d = b+c`；
+  泛性定理：任意群同態 `f : M → H` 唯一延拓 `f̃([a,b]) = f(a) − f(b)`；
+  實例：`K(ℕ) ≅ ℤ`、`f(m)=c·m` 誘導 `ℤ/n` 同態（同態律 quickcheck 驗）。
+- **有限 Yoneda**：walking arrow `[1]` 上可表函子 `h¹ = Hom(−,1)`：
+  **`Nat(h¹, F) ≅ F(1)`** —— 計數 `|Nat| = |X₁|`、雙射 `b ↦ (φ(b), b)` 往返驗證。
+
 ---
 
 ## 4. 形式化證明（`verify/` — 定理清單）
@@ -238,11 +284,13 @@ moon test           # 98/98
 
 ---
 
-## 5. 測試一覽（98 tests + 8 形式化證明 goals）
+## 5. 測試一覽（113 tests + 8 形式化證明 goals）
 
 - **num** 8：`mod_pos` 值域、冪、CRT 基元。
 - **linalg** 8：rref/rank/nullspace/solve、子空間枚舉。
-- **root** 18：Ring/Field 公理、多項式、Buchberger、理想成員；導數值/Frobenius/萊布尼茲 quickcheck。
+- **root** 25：Ring/Field 公理、多項式、Buchberger、理想成員；導數值/Frobenius/萊布尼茲 quickcheck；
+  **規範形式**（`normal_tests_wbtest.mbt` 7）：det 乘法性、Cayley–Hamilton、SNF/HNF 幺模憑證、
+  RCF 不變因子/相似不變量、ANF 對合/線性性（quickcheck×6 + 窮舉性質）。
 - **finite** 12：商環公理、radical、localisation、冪等元分解；socle/單純/半單/Wedderburn。
 - **modules** 13：循環/自由/投射、商模、凝聚、`hom_space` quickcheck×3；對偶維數、扭率、逆極限、模局部化。
 - **geometry** 6：圓4點、CRT 滿秩、Nullstellensatz、eval 同態 quickcheck；光滑/奇異/雅可比。
@@ -250,14 +298,19 @@ moon test           # 98/98
 - **hott** 15：等價/半伴隨、transport+UA-β、命題 derivers、FunExt 片段、π₁(S¹)≅ℤ、商 HIT、
   截斷層、CRT 等價、Ann 加法律、伴隨 Hom-等價 + quickcheck×4 + impl/半伴隨往返。
 - **port** 10：Python/Rust 型別表、簽名/測試抽取、骨架流水線、JSON 報告 + quickcheck×3。
+- **cat** 8：去圈群胚律（窮舉 n³）、路徑範疇/長度函子、自由泛性加權函子、π₀/群胚基數反降、
+  分量⟺可達、K(ℕ) 泛性同態、有限 Yoneda 計數 + 通用律檢查器（quickcheck×5）。
 - **共享測試工具** `testutil/`：`det_rand`/`prop_ring`/`prop_elem`/`is_zero_vec`（原本分散
-  4 個測試檔嘅重複定義已收斂到此套件）。
+  4 個測試檔嘅重複定義已收斂到此套件；`cat` 測試亦經 `det_rand` 共用 PRNG ——
+  root 因 `testutil→finite→root` 依賴環而就地定義測試 LCG，已在碼註說明）。
 - 形式化證明獨立：`./prove.sh` → 8 goals（T1–T4，見 §4）。
 
 ## 6. 模組依賴鏈
 
 ```
-num ─→ linalg ─→ root(ring/poly/groebner/ideal) ─→ finite ─→ modules ─→ geometry ─→ scheme
+num ─→ linalg ─→ root(ring/poly/groebner/ideal + normal規範形式) ─→ finite ─→ modules ─→ geometry ─→ scheme
+ │                                                                                              │
+ └──→ cat（範疇化：群胚/π₀/K(M)/Yoneda）                                                       │
                     │                              │          │                      │
                     └──────────────────────────────┴──────────┴──→ hott（Equiv/HIT/derivers）
                     └──────────────────────────────┴──────────┴──→ port（移植流水線，零依賴除外）

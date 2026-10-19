@@ -1,0 +1,10 @@
+pkgtype(kind: "library")
+
+import {
+  "moon-algebra/num",
+}
+
+import {
+  "moon-algebra/testutil",
+  "moonbitlang/core/quickcheck",
+} for "test"

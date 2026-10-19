@@ -29,10 +29,12 @@ keywords = [
   "finite-field",
   "homotopy-type-theory",
   "code-migration",
+  "normal-forms",
+  "categorification",
 ]
 
 preferred_target = "wasm"
 
-description = "Abstract algebra, linear algebra, algebraic geometry and schemes over finite fields for MoonBit"
+description = "Abstract algebra, normal forms (SNF/HNF/rational canonical/ANF), categorification, linear algebra, algebraic geometry and schemes over finite fields for MoonBit"
 
 warnings = "-implicit_impl_as_method"
